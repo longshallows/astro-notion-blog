@@ -1,11 +1,19 @@
 import type { AstroIntegration } from 'astro'
-import { getAllPosts, downloadFile } from '../lib/notion/client'
+import {
+  getAllBlogPosts,
+  getAllPersonPosts,
+  downloadFile,
+} from '../lib/notion/client'
 
 export default (): AstroIntegration => ({
   name: 'featured-image-downloader',
   hooks: {
     'astro:build:start': async () => {
-      const posts = await getAllPosts()
+      const [blogPosts, personPosts] = await Promise.all([
+        getAllBlogPosts(),
+        getAllPersonPosts(),
+      ])
+      const posts = [...blogPosts, ...personPosts]
 
       await Promise.all(
         posts.map((post) => {

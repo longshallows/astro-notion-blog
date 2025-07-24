@@ -1,5 +1,5 @@
 ---
-import { PUBLIC_GA_TRACKING_ID, ENABLE_LIGHTBOX } from '../server-constants.ts'
+import { PUBLIC_GA_TRACKING_ID, ENABLE_LIGHTBOX, DATABASE_ID, AUTHORS_DB_ID} from '../server-constants.ts'
 import { getDatabase } from '../lib/notion/client.ts'
 import { getNavLink, getStaticFilePath, filePath } from '../lib/blog-helpers.ts'
 import '../styles/syntax-coloring.css'
@@ -16,7 +16,7 @@ export interface Props {
 
 const { title = '', description = '', path = '/', ogImage = '' } = Astro.props
 
-const database = await getDatabase()
+const database = await getDatabase(DATABASE_ID)
 
 const siteTitle = title ? `${title} - ${database.Title}` : database.Title
 const siteDescription = description ? description : database.Description

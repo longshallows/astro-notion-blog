@@ -1,11 +1,12 @@
 import type { AstroIntegration } from 'astro'
 import { getDatabase, downloadFile } from '../lib/notion/client'
+import { DATABASE_ID } from '../server-constants'
 
 export default (): AstroIntegration => ({
   name: 'cover-image-downloader',
   hooks: {
     'astro:build:start': async () => {
-      const database = await getDatabase()
+      const database = await getDatabase(DATABASE_ID)
 
       if (!database.Cover || database.Cover.Type !== 'file') {
         return Promise.resolve()

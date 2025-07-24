@@ -1,0 +1,65 @@
+---
+import * as interfaces from '../../lib/interfaces.ts'
+import {
+  getAllPersons,
+  getAllBlogPosts,
+  getAllBlocksByBlockId,
+} from '../../lib/notion/client.ts'
+import { getPersonLink } from '../../lib/blog-helpers.ts'
+import Layout from '../../layouts/Layout.astro'
+import PostTitle from '../../components/PostTitle.astro'
+import PostBody from '../../components/PostBody.astro'
+import BlogPostsLink from '../../components/BlogPostsLink.astro'
+import styles from '../../styles/blog.module.css'
+
+export async function getStaticPaths() {
+  const allPersons = await getAllPersons()
+  return allPersons.map((person) => ({
+    params: { slug: person.Slug },
+  }))
+}
+
+const { slug } = Astro.params
+
+const allPersons = await getAllPersons()
+const person = allPersons.find((p) => p.Slug === slug)
+
+if (!person) {
+  throw new Error(`Person not found with slug: ${slug}`)
+}
+
+const blocks = await getAllBlocksByBlockId(person.PageId)
+
+const allBlogPosts = await getAllBlogPosts()
+
+const relatedPosts = allBlogPosts.filter((post) =>
+  person.RelatedPosts.includes(post.PageId)
+)
+---
+
+<Layout
+  title={person.Title}
+  description={person.Excerpt || ''}
+  path={getPersonLink(person.Slug)}
+  ogImage={person.Cover?.Url || ''}
+>
+  <div slot="main" class={styles.main}>
+    <div class={styles.post}>
+      <PostTitle post={person} enableLink={false} basePath="persons" />
+      <PostBody blocks={blocks} />
+
+      <hr />
+
+      <h2>担当記事一覧</h2>
+      {relatedPosts.length > 0 ? (
+        <BlogPostsLink posts={relatedPosts} />
+      ) : (
+        <p>担当記事はまだありません。</p>
+      )}
+    </div>
+  </div>
+
+  <div slot="aside" class="aside">
+    <a href="/persons">→ 著者一覧へ戻る</a>
+  </div>
+</Layout>

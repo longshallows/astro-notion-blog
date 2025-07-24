@@ -6,6 +6,7 @@ import {
   getNumberOfPages,
   getPostsByPage,
 } from '../../../lib/notion/client.ts'
+import { DATABASE_ID,AUTHORS_DB_ID } from '../../../server-constants.ts'
 import Layout from '../../../layouts/Layout.astro'
 import NoContents from '../../../components/NoContents.astro'
 import PostDate from '../../../components/PostDate.astro'
@@ -19,8 +20,7 @@ import BlogPostsLink from '../../../components/BlogPostsLink.astro'
 import BlogTagsLink from '../../../components/BlogTagsLink.astro'
 import styles from '../../../styles/blog.module.css'
 
-export async function getStaticPaths() {
-  const numberOfPages = await getNumberOfPages()
+export async function getStaticPaths() {const numberOfPages = await getNumberOfPages(DATABASE_ID)
 
   let params = []
   for (let i = 2; i <= numberOfPages; i++) {
@@ -32,10 +32,10 @@ export async function getStaticPaths() {
 const { page } = Astro.params
 
 const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPostsByPage(parseInt(page, 10)),
-  getRankedPosts(),
-  getAllTags(),
-  getNumberOfPages(),
+  getPostsByPage(DATABASE_ID, parseInt(page, 10)),
+  getRankedPosts(DATABASE_ID),
+  getAllTags(DATABASE_ID),
+  getNumberOfPages(DATABASE_ID),
 ])
 ---
 
@@ -53,7 +53,7 @@ const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
           <div class={styles.post} key={post.Slug}>
             <PostDate post={post} />
             <PostTags post={post} />
-            <PostTitle post={post} />
+            <PostTitle post={post} basePath="posts"/>
             <PostFeaturedImage post={post} />
             <PostExcerpt post={post} />
             <ReadMoreLink post={post} />

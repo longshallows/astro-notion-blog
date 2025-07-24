@@ -1,8 +1,7 @@
 ---
 import * as interfaces from '../../lib/interfaces.ts'
 import {
-  getPosts,
-  getAllPosts,
+  getAllBlogPosts,
   getRankedPosts,
   getPostBySlug,
   getPostsByTag,
@@ -10,7 +9,9 @@ import {
   getAllTags,
   getAllBlocksByBlockId,
   downloadFile,
+  getPosts,
 } from '../../lib/notion/client.ts'
+import { DATABASE_ID } from '../../server-constants.ts'
 import {
   getPostLink,
   filePath,
@@ -27,26 +28,32 @@ import BlogTagsLink from '../../components/BlogTagsLink.astro'
 import styles from '../../styles/blog.module.css'
 
 export async function getStaticPaths() {
-  const posts = await getAllPosts()
+  const posts = await getAllBlogPosts()
   return posts.map((post: interfaces.Post) => ({ params: { slug: post.Slug } }))
 }
 
 const { slug } = Astro.params
 
-const post = await getPostBySlug(slug)
+const post = await getPostBySlug(slug, DATABASE_ID)
 if (!post) {
   throw new Error(`Post not found. slug: ${slug}`)
 }
 
-const [blocks, allPosts, rankedPosts, recentPosts, tags, postsHavingSameTag] =
-  await Promise.all([
-    getAllBlocksByBlockId(post.PageId),
-    getAllPosts(),
-    getRankedPosts(),
-    getPosts(5),
-    getAllTags(),
-    getPostsByTag(post.Tags[0]?.name, 6),
-  ])
+const [
+  blocks,
+  allPosts,
+  rankedPosts,
+  recentPosts,
+  tags,
+  postsHavingSameTag,
+] = await Promise.all([
+  getAllBlocksByBlockId(post.PageId),
+  getAllBlogPosts(),
+  getRankedPosts(DATABASE_ID),
+  getPosts(DATABASE_ID, 5),
+  getAllTags(DATABASE_ID),
+  getPostsByTag(post.Tags[0]?.name, DATABASE_ID, 6),
+])
 
 const fileAtacchedBlocks = extractTargetBlocks('image', blocks)
   .concat(extractTargetBlocks('file', blocks))
@@ -74,7 +81,10 @@ await Promise.all(
         try {
           url = new URL((block.Image || block.File).File.Url)
         } catch {
-          console.log('Invalid file URL: ', (block.Image || block.File)?.File?.Url)
+          console.log(
+            'Invalid file URL: ',
+            (block.Image || block.File)?.File?.Url
+          )
           return Promise.reject()
         }
         return Promise.resolve(url)
@@ -83,13 +93,16 @@ await Promise.all(
     .map((promise) => promise.then(downloadFile))
 )
 
-const currentPostIndex = allPosts.findIndex((post) => post.Slug === slug)
+const currentPostIndex = allPosts.findIndex((p) => p.Slug === slug)
 const prevPost = allPosts[currentPostIndex + 1]
 const nextPost = allPosts[currentPostIndex - 1]
 
 let ogImage = ''
 if (post.FeaturedImage && post.FeaturedImage.Url) {
-  ogImage = new URL(filePath(new URL(post.FeaturedImage.Url)), Astro.site)
+  ogImage = new URL(
+    filePath(new URL(post.FeaturedImage.Url)),
+    Astro.site
+  ).toString()
 }
 ---
 
@@ -103,7 +116,7 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
     <div class={styles.post}>
       <PostDate post={post} />
       <PostTags post={post} />
-      <PostTitle post={post} enableLink={false} />
+      <PostTitle post={post} enableLink={false} basePath="posts"/>
       <PostBody blocks={blocks} />
       <PostTags post={post} />
 

@@ -16,6 +16,20 @@ export interface Post {
   Excerpt: string
   FeaturedImage: FileObject | null
   Rank: number
+  Author: string
+}
+export interface Person {
+  PageId: string
+  Title: string
+  Icon: FileObject | Emoji | null
+  Cover: FileObject | null
+  Slug: string
+  Date: string
+  Tags: SelectProperty[]
+  Excerpt: string
+  FeaturedImage: FileObject | null
+  Rank: number
+  Articles: string[]
 }
 
 export interface Block {

@@ -7,6 +7,7 @@ import ExifTransformer from 'exif-be-gone'
 import {
   NOTION_API_SECRET,
   DATABASE_ID,
+  AUTHORS_DB_ID,
   NUMBER_OF_POSTS_PER_PAGE,
   REQUEST_TIMEOUT_MS,
 } from '../../server-constants'
@@ -60,18 +61,19 @@ const client = new Client({
   auth: NOTION_API_SECRET,
 })
 
-let postsCache: Post[] | null = null
-let dbCache: Database | null = null
+const postsCache = new Map<string, Post[]>()
+const personsCache = new Map<string, Person[]>()
+const dbCache = new Map<string, Database>()
 
 const numberOfRetry = 2
 
-export async function getAllPosts(): Promise<Post[]> {
-  if (postsCache !== null) {
-    return Promise.resolve(postsCache)
+export async function getAllPosts(databaseId: string): Promise<Post[]> {
+  if (postsCache.has(databaseId)) {
+    return Promise.resolve(postsCache.get(databaseId)!)
   }
 
   const params: requestParams.QueryDatabase = {
-    database_id: DATABASE_ID,
+    database_id: databaseId,
     filter: {
       and: [
         {
@@ -103,7 +105,7 @@ export async function getAllPosts(): Promise<Post[]> {
       async (bail) => {
         try {
           return (await client.databases.query(
-            params as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            params as any
           )) as responses.QueryDatabaseResponse
         } catch (error: unknown) {
           if (error instanceof APIResponseError) {
@@ -128,19 +130,91 @@ export async function getAllPosts(): Promise<Post[]> {
     params['start_cursor'] = res.next_cursor as string
   }
 
-  postsCache = results
+  const posts = results
     .filter((pageObject) => _validPageObject(pageObject))
     .map((pageObject) => _buildPost(pageObject))
-  return postsCache
+
+  postsCache.set(databaseId, posts)
+  return posts
 }
 
-export async function getPosts(pageSize = 10): Promise<Post[]> {
-  const allPosts = await getAllPosts()
+export async function getAllPersons(): Promise<Person[]> {
+  const databaseId = AUTHORS_DB_ID
+  if (personsCache.has(databaseId)) {
+    return Promise.resolve(personsCache.get(databaseId)!)
+  }
+
+  const params: requestParams.QueryDatabase = {
+    database_id: databaseId,
+    filter: {
+      property: 'Published',
+      checkbox: {
+        equals: true,
+      },
+    },
+    page_size: 100,
+  }
+
+  let results: responses.PageObject[] = []
+  while (true) {
+    const res = await retry(
+      async (bail) => {
+        try {
+          return (await client.databases.query(
+            params as any
+          )) as responses.QueryDatabaseResponse
+        } catch (error: unknown) {
+          if (error instanceof APIResponseError) {
+            if (error.status && error.status >= 400 && error.status < 500) {
+              bail(error)
+            }
+          }
+          throw error
+        }
+      },
+      {
+        retries: numberOfRetry,
+      }
+    )
+
+    results = results.concat(res.results)
+
+    if (!res.has_more) {
+      break
+    }
+
+    params['start_cursor'] = res.next_cursor as string
+  }
+
+  const persons = results
+    .filter((pageObject) => _validPageObject(pageObject))
+    .map((pageObject) => _buildPerson(pageObject))
+
+  personsCache.set(databaseId, persons)
+  return persons
+}
+
+export async function getAllBlogPosts(): Promise<Post[]> {
+  return getAllPosts(DATABASE_ID)
+}
+
+export async function getAllPersonPosts(): Promise<Post[]> {
+  return getAllPosts(AUTHORS_DB_ID)
+}
+
+export async function getPosts(
+  databaseId: string,
+  pageSize = 10
+): Promise<Post[]> {
+  const allPosts = await getAllPosts(databaseId)
   return allPosts.slice(0, pageSize)
 }
 
-export async function getRankedPosts(pageSize = 10): Promise<Post[]> {
-  const allPosts = await getAllPosts()
+export async function getRankedPosts(
+  databaseId: string,
+  pageSize = 10
+): Promise<Post[]> {
+  const allPosts = await getAllPosts(databaseId)
   return allPosts
     .filter((post) => !!post.Rank)
     .sort((a, b) => {
@@ -154,35 +228,45 @@ export async function getRankedPosts(pageSize = 10): Promise<Post[]> {
     .slice(0, pageSize)
 }
 
-export async function getPostBySlug(slug: string): Promise<Post | null> {
-  const allPosts = await getAllPosts()
+export async function getPostBySlug(
+  slug: string,
+  databaseId: string
+): Promise<Post | null> {
+  const allPosts = await getAllPosts(databaseId)
   return allPosts.find((post) => post.Slug === slug) || null
 }
 
-export async function getPostByPageId(pageId: string): Promise<Post | null> {
-  const allPosts = await getAllPosts()
+export async function getPostByPageId(
+  pageId: string,
+  databaseId: string
+): Promise<Post | null> {
+  const allPosts = await getAllPosts(databaseId)
   return allPosts.find((post) => post.PageId === pageId) || null
 }
 
 export async function getPostsByTag(
   tagName: string,
+  databaseId: string,
   pageSize = 10
 ): Promise<Post[]> {
   if (!tagName) return []
 
-  const allPosts = await getAllPosts()
+  const allPosts = await getAllPosts(databaseId)
   return allPosts
     .filter((post) => post.Tags.find((tag) => tag.name === tagName))
     .slice(0, pageSize)
 }
 
 // page starts from 1 not 0
-export async function getPostsByPage(page: number): Promise<Post[]> {
+export async function getPostsByPage(
+  databaseId: string,
+  page: number
+): Promise<Post[]> {
   if (page < 1) {
     return []
   }
 
-  const allPosts = await getAllPosts()
+  const allPosts = await getAllPosts(databaseId)
 
   const startIndex = (page - 1) * NUMBER_OF_POSTS_PER_PAGE
   const endIndex = startIndex + NUMBER_OF_POSTS_PER_PAGE
@@ -193,13 +277,14 @@ export async function getPostsByPage(page: number): Promise<Post[]> {
 // page starts from 1 not 0
 export async function getPostsByTagAndPage(
   tagName: string,
+  databaseId: string,
   page: number
 ): Promise<Post[]> {
   if (page < 1) {
     return []
   }
 
-  const allPosts = await getAllPosts()
+  const allPosts = await getAllPosts(databaseId)
   const posts = allPosts.filter((post) =>
     post.Tags.find((tag) => tag.name === tagName)
   )
@@ -210,16 +295,19 @@ export async function getPostsByTagAndPage(
   return posts.slice(startIndex, endIndex)
 }
 
-export async function getNumberOfPages(): Promise<number> {
-  const allPosts = await getAllPosts()
+export async function getNumberOfPages(databaseId: string): Promise<number> {
+  const allPosts = await getAllPosts(databaseId)
   return (
     Math.floor(allPosts.length / NUMBER_OF_POSTS_PER_PAGE) +
     (allPosts.length % NUMBER_OF_POSTS_PER_PAGE > 0 ? 1 : 0)
   )
 }
 
-export async function getNumberOfPagesByTag(tagName: string): Promise<number> {
-  const allPosts = await getAllPosts()
+export async function getNumberOfPagesByTag(
+  tagName: string,
+  databaseId: string
+): Promise<number> {
+  const allPosts = await getAllPosts(databaseId)
   const posts = allPosts.filter((post) =>
     post.Tags.find((tag) => tag.name === tagName)
   )
@@ -359,8 +447,10 @@ export async function getBlock(blockId: string): Promise<Block> {
   return _buildBlock(res)
 }
 
-export async function getAllTags(): Promise<SelectProperty[]> {
-  const allPosts = await getAllPosts()
+export async function getAllTags(
+  databaseId: string
+): Promise<SelectProperty[]> {
+  const allPosts = await getAllPosts(databaseId)
 
   const tagNames: string[] = []
   return allPosts
@@ -421,20 +511,20 @@ export async function downloadFile(url: URL) {
   }
 }
 
-export async function getDatabase(): Promise<Database> {
-  if (dbCache !== null) {
-    return Promise.resolve(dbCache)
+export async function getDatabase(databaseId: string): Promise<Database> {
+  if (dbCache.has(databaseId)) {
+    return Promise.resolve(dbCache.get(databaseId)!)
   }
 
   const params: requestParams.RetrieveDatabase = {
-    database_id: DATABASE_ID,
+    database_id: databaseId,
   }
 
   const res = await retry(
     async (bail) => {
       try {
         return (await client.databases.retrieve(
-          params as any // eslint-disable-line @typescript-eslint/no-explicit-any
+          params as any
         )) as responses.RetrieveDatabaseResponse
       } catch (error: unknown) {
         if (error instanceof APIResponseError) {
@@ -487,7 +577,7 @@ export async function getDatabase(): Promise<Database> {
     Cover: cover,
   }
 
-  dbCache = database
+  dbCache.set(databaseId, database)
   return database
 }
 
@@ -992,6 +1082,55 @@ function _buildPost(pageObject: responses.PageObject): Post {
   }
 
   return post
+}
+
+function _buildPerson(pageObject: responses.PageObject): Person {
+  const prop = pageObject.properties
+
+  // アイコンとカバー画像の処理
+  let icon: FileObject | Emoji | null = null
+  if (pageObject.icon) {
+    if (pageObject.icon.type === 'emoji' && 'emoji' in pageObject.icon) {
+      icon = {
+        Type: pageObject.icon.type,
+        Emoji: pageObject.icon.emoji,
+      }
+    } else if (
+      pageObject.icon.type === 'external' &&
+      'external' in pageObject.icon
+    ) {
+      icon = {
+        Type: pageObject.icon.type,
+        Url: pageObject.icon.external?.url || '',
+      }
+    }
+  }
+
+  let cover: FileObject | null = null
+  if (pageObject.cover) {
+    cover = {
+      Type: pageObject.cover.type,
+      Url: pageObject.cover.external?.url || '',
+    }
+  }
+
+  const relationProperty = prop['Articles']?.relation || []
+
+  const person: Person = {
+    PageId: pageObject.id,
+    Title: prop.Page.title
+      ? prop.Page.title.map((richText) => richText.plain_text).join('')
+      : '',
+    Icon: icon,
+    Cover: cover,
+    Slug: prop.Slug.rich_text
+      ? prop.Slug.rich_text.map((richText) => richText.plain_text).join('')
+      : '',
+
+    RelatedPosts: relationProperty.map((relation) => relation.id),
+  }
+
+  return person
 }
 
 function _buildRichText(richTextObject: responses.RichTextObject): RichText {

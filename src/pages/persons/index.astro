@@ -1,0 +1,50 @@
+---
+import { NUMBER_OF_POSTS_PER_PAGE } from '../../server-constants.ts'
+import {
+  getPosts,
+  getNumberOfPages,
+} from '../../lib/notion/client.ts'
+import { AUTHORS_DB_ID } from '../../server-constants.ts'
+import Layout from '../../layouts/Layout.astro'
+import styles from '../../styles/blog.module.css'
+import NoContents from '../../components/NoContents.astro'
+import PostDate from '../../components/PostDate.astro'
+import PostTags from '../../components/PostTags.astro'
+import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
+import PostExcerpt from '../../components/PostExcerpt.astro'
+import PostTitle from '../../components/PostTitle.astro'
+import Pagination from '../../components/Pagination.astro'
+import styles from '../../styles/blog.module.css'
+
+const [persons, numberOfPages] = await Promise.all([
+  getPosts(AUTHORS_DB_ID, NUMBER_OF_POSTS_PER_PAGE),
+  getNumberOfPages(AUTHORS_DB_ID),
+])
+---
+<Layout>
+  <div slot="main">
+    {
+      persons.length === 0 ? (
+        <NoContents contents={persons} />
+      ) : (
+        persons.map((person) => (
+          <div class={styles.post} key={person.Slug}>
+            <PostDate post={person} />
+            <PostTags post={person} />
+            <PostTitle post={person} basePath="persons" />
+            <PostFeaturedImage post={person} />
+            <PostExcerpt post={person} />
+            <a href={`/persons/${person.Slug}`}>→Read more</a>
+          </div>
+        ))
+      )
+    }
+    <footer>
+      <Pagination basePath="/persons" currentPage={1} numberOfPages={numberOfPages} />
+    </footer>
+  </div>
+
+  <div slot="aside">
+    {/* サイドバーコンテンツ */}
+  </div>
+</Layout>

@@ -1,4 +1,5 @@
 ---
+import { DATABASE_ID, AUTHORS_DB_ID } from '../server-constants.ts'
 import { NUMBER_OF_POSTS_PER_PAGE } from '../server-constants.ts'
 import {
   getPosts,
@@ -20,10 +21,10 @@ import BlogTagsLink from '../components/BlogTagsLink.astro'
 import styles from '../styles/blog.module.css'
 
 const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPosts(NUMBER_OF_POSTS_PER_PAGE),
-  getRankedPosts(),
-  getAllTags(),
-  getNumberOfPages(),
+  getPosts(DATABASE_ID, NUMBER_OF_POSTS_PER_PAGE), // 第1引数にDATABASE_IDを追加
+  getRankedPosts(DATABASE_ID),                     // 引数にDATABASE_IDを追加
+  getAllTags(DATABASE_ID),                         // 引数にDATABASE_IDを追加
+  getNumberOfPages(DATABASE_ID),                   // 引数にDATABASE_IDを追加
 ])
 ---
 
@@ -37,7 +38,7 @@ const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
           <div class={styles.post} key={post.Slug}>
             <PostDate post={post} />
             <PostTags post={post} />
-            <PostTitle post={post} />
+            <PostTitle post={post} basePath="posts" />
             <PostFeaturedImage post={post} />
             <PostExcerpt post={post} />
             <ReadMoreLink post={post} />
@@ -47,7 +48,7 @@ const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
     }
 
     <footer>
-      <Pagination currentPage={1} numberOfPages={numberOfPages} />
+      <Pagination basePath="/posts" currentPage={1} numberOfPages={numberOfPages} />
     </footer>
   </div>
 

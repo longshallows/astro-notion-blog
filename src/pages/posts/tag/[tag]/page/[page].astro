@@ -6,6 +6,7 @@ import {
   getAllTags,
   getNumberOfPagesByTag,
 } from '../../../../../lib/notion/client.ts'
+import { DATABASE_ID, AUTHORS_DB_ID } from '../../../../../server-constants.ts'
 import Layout from '../../../../../layouts/Layout.astro'
 import NoContents from '../../../../../components/NoContents.astro'
 import PostDate from '../../../../../components/PostDate.astro'
@@ -21,17 +22,19 @@ import styles from '../../../../../styles/blog.module.css'
 import '../../../../../styles/notion-color.css'
 
 export async function getStaticPaths() {
-  const allTags = await getAllTags()
+const allTags = await getAllTags(DATABASE_ID)
 
   let params = []
 
   await Promise.all(
     allTags.map((tag: SelectProperty) => {
-      return getNumberOfPagesByTag(tag.name).then((numberOfPages: number) => {
-        for (let i = 2; i <= numberOfPages; i++) {
-          params.push({ params: { tag: tag.name, page: i.toString() } })
+      return getNumberOfPagesByTag(tag.name, DATABASE_ID).then(
+        (numberOfPages: number) => {
+          for (let i = 2; i <= numberOfPages; i++) {
+            params.push({ params: { tag: tag.name, page: i.toString() } })
+          }
         }
-      })
+      )
     })
   )
 
@@ -41,10 +44,10 @@ export async function getStaticPaths() {
 const { tag, page } = Astro.params
 
 const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPostsByTagAndPage(tag, parseInt(page, 10)),
-  getRankedPosts(),
-  getAllTags(),
-  getNumberOfPagesByTag(tag),
+  getPostsByTagAndPage(tag, DATABASE_ID, parseInt(page, 10)),
+  getRankedPosts(DATABASE_ID),
+  getAllTags(DATABASE_ID),
+  getNumberOfPagesByTag(tag, DATABASE_ID),
 ])
 
 const currentTag = posts[0].Tags.find((t) => t.name === tag)
@@ -70,7 +73,7 @@ const currentTag = posts[0].Tags.find((t) => t.name === tag)
           <div class={styles.post} key={post.Slug}>
             <PostDate post={post} />
             <PostTags post={post} />
-            <PostTitle post={post} />
+            <PostTitle post={post} basePath="posts"/>
             <PostFeaturedImage post={post} />
             <PostExcerpt post={post} />
             <ReadMoreLink post={post} />

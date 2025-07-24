@@ -1,12 +1,13 @@
 import type { AstroIntegration } from 'astro'
 import type { FileObject } from '../lib/interfaces'
 import { getDatabase, downloadFile } from '../lib/notion/client'
+import { DATABASE_ID } from '../server-constants'
 
 export default (): AstroIntegration => ({
   name: 'custom-icon-downloader',
   hooks: {
     'astro:build:start': async () => {
-      const database = await getDatabase()
+      const database = await getDatabase(DATABASE_ID)
 
       if (!database.Icon || database.Icon.Type !== 'file') {
         return Promise.resolve()

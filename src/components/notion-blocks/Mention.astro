@@ -2,6 +2,7 @@
 import { Post } from '../../lib/interfaces.ts'
 import { getPostByPageId } from '../../lib/notion/client'
 import { getPostLink } from '../../lib/blog-helpers.ts'
+import { DATABASE_ID, AUTHORS_DB_ID } from '../../server-constants.ts'
 import '../../styles/notion-color.css'
 import arrow from '../../images/icon-arrow-link.svg'
 
@@ -11,15 +12,26 @@ export interface Props {
 
 const { pageId } = Astro.props
 
-let post: Post = null
+let post: Post | null = null
+let link = '#'
+
 if (pageId) {
-  post = await getPostByPageId(pageId)
+  post = await getPostByPageId(pageId, DATABASE_ID)
+  if (post) {
+    link = getPostLink(post.Slug)
+  } else {
+    post = await getPostByPageId(pageId, AUTHORS_DB_ID)
+    if (post) {
+      // TODO: 著者ページ用のリンクヘルパーを作成するか、ここでパスを組み立てる
+      link = `/authors/${post.Slug}`
+    }
+  }
 }
 ---
 
 {
   post ? (
-    <a href={getPostLink(post.Slug)} class="link">
+    <a href={link} class="link">
       <>
         <span class="icon">
           {post.Icon && post.Icon.Type === 'emoji' ? (
@@ -33,7 +45,11 @@ if (pageId) {
           ) : (
             '📄'
           )}
-          <img src={arrow.src} class="icon-link" alt="Arrow icon of a page link" />
+          <img
+            src={arrow.src}
+            class="icon-link"
+            alt="Arrow icon of a page link"
+          />
         </span>
         <span class="text">{post.Title}</span>
       </>

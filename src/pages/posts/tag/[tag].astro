@@ -1,6 +1,6 @@
 ---
 import type { SelectProperty } from '../../../lib/interfaces.ts'
-import { NUMBER_OF_POSTS_PER_PAGE } from '../../../server-constants.ts'
+import { NUMBER_OF_POSTS_PER_PAGE, DATABASE_ID } from '../../../server-constants.ts'
 import {
   getPostsByTag,
   getRankedPosts,
@@ -22,17 +22,17 @@ import styles from '../../../styles/blog.module.css'
 import '../../../styles/notion-color.css'
 
 export async function getStaticPaths() {
-  const allTags = await getAllTags()
+  const allTags = await getAllTags(DATABASE_ID)
   return allTags.map((tag: SelectProperty) => ({ params: { tag: tag.name } }))
 }
 
 const { tag } = Astro.params
 
 const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPostsByTag(tag, NUMBER_OF_POSTS_PER_PAGE),
-  getRankedPosts(),
-  getAllTags(),
-  getNumberOfPagesByTag(tag),
+  getPostsByTag(tag, DATABASE_ID, NUMBER_OF_POSTS_PER_PAGE),
+  getRankedPosts(DATABASE_ID),
+  getAllTags(DATABASE_ID),
+  getNumberOfPagesByTag(tag, DATABASE_ID),
 ])
 
 const currentTag = posts[0].Tags.find((t) => t.name === tag)
@@ -54,7 +54,7 @@ const currentTag = posts[0].Tags.find((t) => t.name === tag)
           <div class={styles.post} key={post.Slug}>
             <PostDate post={post} />
             <PostTags post={post} />
-            <PostTitle post={post} />
+            <PostTitle post={post} basePath="posts"/>
             <PostFeaturedImage post={post} />
             <PostExcerpt post={post} />
             <ReadMoreLink post={post} />

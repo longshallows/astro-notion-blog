@@ -1,21 +1,27 @@
 ---
 import { Post } from '../lib/interfaces.ts'
-import { getPostLink } from '../lib/blog-helpers.ts'
+import { getPostLink, getPersonLink } from '../lib/blog-helpers.ts'
 
 export interface Props {
   post: Post
-  enableLink: boolean
+  enableLink?: boolean
+  basePath: 'posts' | 'persons'
 }
 
-const { post, enableLink = true } = Astro.props
+const { post, enableLink = true, basePath } = Astro.props
 
-let title = post.Title
+const title = post.Title
+
+const link =
+  basePath === 'posts'
+    ? getPostLink(post.Slug)
+    : getPersonLink(post.Slug)
 ---
 
 <h2 class="post-title">
   {
     enableLink ? (
-      <a href={getPostLink(post.Slug)}>
+      <a href={link}>
         {post.Icon && post.Icon.Type === 'emoji' ? (
           <>
             <span>{post.Icon.Emoji}</span>
