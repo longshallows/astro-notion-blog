@@ -7,6 +7,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
+    "build:local": "source .zshrc && astro build",
     "build:cached": "npm run cache:fetch && astro build",
     "preview": "astro preview",
     "astro": "astro",
