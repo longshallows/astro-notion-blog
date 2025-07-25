@@ -1,0 +1,52 @@
+---
+import type { Person } from '../lib/interfaces.ts'
+import { getPersonLink } from '../lib/blog-helpers.ts'
+
+export interface Props {
+  authors: Person[]
+}
+
+const { authors } = Astro.props
+---
+
+<div class="post-authors">
+  {
+    authors.map((author) => (
+      <a href={getPersonLink(author.Slug)} class="author-link">
+        {author.Icon && author.Icon.Type === 'emoji' ? (
+          <span class="author-icon">{author.Icon.Emoji}</span>
+        ) : author.Icon && author.Icon.Type === 'external' ? (
+          <img src={author.Icon.Url} alt={author.Title} class="author-icon" />
+        ) : null}
+        <span class="author-name">{author.Title}</span>
+      </a>
+    ))
+  }
+</div>
+
+<style>
+  .post-authors {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .author-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--fg);
+  }
+  .author-link:hover {
+    text-decoration: underline;
+  }
+  .author-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .author-name {
+    font-weight: bold;
+  }
+</style>

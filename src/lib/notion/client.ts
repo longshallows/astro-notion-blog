@@ -17,6 +17,7 @@ import type * as requestParams from './request-params'
 import type {
   Database,
   Post,
+  Person,
   Block,
   Paragraph,
   Heading1,
@@ -1061,6 +1062,8 @@ function _buildPost(pageObject: responses.PageObject): Post {
     }
   }
 
+  const authorRelation = prop['Author']?.relation || []
+
   const post: Post = {
     PageId: pageObject.id,
     Title: prop.Page.title
@@ -1079,6 +1082,7 @@ function _buildPost(pageObject: responses.PageObject): Post {
         : '',
     FeaturedImage: featuredImage,
     Rank: prop.Rank.number ? prop.Rank.number : 0,
+    RelatedAuthors: authorRelation.map((relation) => relation.id),
   }
 
   return post

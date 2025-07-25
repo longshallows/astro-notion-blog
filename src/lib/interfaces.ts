@@ -16,7 +16,7 @@ export interface Post {
   Excerpt: string
   FeaturedImage: FileObject | null
   Rank: number
-  Author: string
+  Author: string[]
 }
 export interface Person {
   PageId: string

@@ -2,6 +2,7 @@
 import * as interfaces from '../../lib/interfaces.ts'
 import {
   getAllBlogPosts,
+  getAllPersons,
   getRankedPosts,
   getPostBySlug,
   getPostsByTag,
@@ -25,6 +26,7 @@ import PostBody from '../../components/PostBody.astro'
 import PostRelativeLink from '../../components/PostRelativeLink.astro'
 import BlogPostsLink from '../../components/BlogPostsLink.astro'
 import BlogTagsLink from '../../components/BlogTagsLink.astro'
+import PostAuthor from '../../components/PostAuthor.astro'
 import styles from '../../styles/blog.module.css'
 
 export async function getStaticPaths() {
@@ -39,21 +41,30 @@ if (!post) {
   throw new Error(`Post not found. slug: ${slug}`)
 }
 
+let postsHavingSameTag: interfaces.Post[] = []
+
 const [
   blocks,
   allPosts,
+  allPersons,
   rankedPosts,
   recentPosts,
   tags,
-  postsHavingSameTag,
 ] = await Promise.all([
   getAllBlocksByBlockId(post.PageId),
   getAllBlogPosts(),
+  getAllPersons(),
   getRankedPosts(DATABASE_ID),
   getPosts(DATABASE_ID, 5),
   getAllTags(DATABASE_ID),
   getPostsByTag(post.Tags[0]?.name, DATABASE_ID, 6),
 ])
+
+if (post.Tags.length > 0) {
+  postsHavingSameTag = await getPostsByTag(post.Tags[0].name, DATABASE_ID, 6)
+}
+
+const authors = allPersons.filter((p) => post.RelatedAuthors.includes(p.PageId))
 
 const fileAtacchedBlocks = extractTargetBlocks('image', blocks)
   .concat(extractTargetBlocks('file', blocks))
@@ -118,6 +129,7 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
       <PostTags post={post} />
       <PostTitle post={post} enableLink={false} basePath="posts"/>
       <PostBody blocks={blocks} />
+      {authors.length > 0 && <PostAuthor authors={authors} />}
       <PostTags post={post} />
 
       <footer>
