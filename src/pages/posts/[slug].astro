@@ -23,6 +23,7 @@ import PostDate from '../../components/PostDate.astro'
 import PostTags from '../../components/PostTags.astro'
 import PostTitle from '../../components/PostTitle.astro'
 import PostBody from '../../components/PostBody.astro'
+import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
 import PostRelativeLink from '../../components/PostRelativeLink.astro'
 import BlogPostsLink from '../../components/BlogPostsLink.astro'
 import BlogTagsLink from '../../components/BlogTagsLink.astro'
@@ -125,9 +126,11 @@ if (post.FeaturedImage && post.FeaturedImage.Url) {
 >
   <div slot="main" class={styles.main}>
     <div class={styles.post}>
-      <PostDate post={post} />
+      <PostFeaturedImage post={post} />
       <PostTags post={post} />
       <PostTitle post={post} enableLink={false} basePath="posts"/>
+      <PostDate post={post} />
+      {authors.length > 0 && <PostAuthor authors={authors} />}
       <PostBody blocks={blocks} />
       {authors.length > 0 && <PostAuthor authors={authors} />}
       <PostTags post={post} />

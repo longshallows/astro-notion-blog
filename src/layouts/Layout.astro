@@ -3,6 +3,7 @@ import { ENABLE_LIGHTBOX, DATABASE_ID } from '../server-constants.ts'
 import { getDatabase } from '../lib/notion/client.ts'
 import { getNavLink, getStaticFilePath, filePath } from '../lib/blog-helpers.ts'
 import '../styles/syntax-coloring.css'
+import '../styles/global.css'
 import SearchModal from '../components/SearchModal.astro'
 import SearchButton from '../components/SearchButton.astro'
 
@@ -110,10 +111,29 @@ if (database.Icon && database.Icon.Type === 'file') {
             <header class="content-header">
               <h1>
                 <a href={getNavLink('/')}>
-                  {database.Icon && database.Icon.Type === 'emoji' ? (
-                    <span>{database.Icon.Emoji}</span>
-                  ) : null}
-                  {database.Title}
+                                    {
+                    database.Icon && database.Icon.Type === 'emoji' ? (
+                      <>
+                        <span>{database.Icon.Emoji}</span>
+                      </>
+                    ) : database.Icon && database.Icon.Type === 'external' ? (
+                      <>
+                        <img src={database.Icon.Url} alt="Site icon image" />
+                        {database.Title}
+                      </>
+                    ) : database.Icon && database.Icon.Type === 'file' ? (
+                      <>
+                        <img
+                          src={customIconURL}
+                          class="custom-icon"
+                          alt="Site icon image"
+                        />
+                        {database.Title}
+                      </>
+                    ) : (
+                      database.Title
+                    )
+                  }
                 </a>
               </h1>
               <div class="description">{database.Description}</div>
@@ -161,10 +181,12 @@ if (database.Icon && database.Icon.Type === 'file') {
         if (hamburger && sidebarContainer && overlay) {
           hamburger.addEventListener('click', () => {
             sidebarContainer.classList.toggle('is-open');
+            document.body.classList.toggle('sidebar-is-open');
           });
 
           overlay.addEventListener('click', () => {
             sidebarContainer.classList.remove('is-open');
+            document.body.classList.remove('sidebar-is-open');
           });
         }
       });
@@ -175,11 +197,56 @@ if (database.Icon && database.Icon.Type === 'file') {
 <style>
   .container {
     min-height: 100vh;
+    margin: 0 auto;
+    max-width: 1280px;
   }
   main {
     flex: 1;
     justify-content: space-between;
   }
+    @media (max-width: 640px) {
+    div.content {
+      padding: 0 18px;
+    }
+  }
+
+
+  main header h1 {
+    font-weight: 700;
+    color: #333;
+  }
+  main header h1 a {
+    display: block;
+    color: inherit;
+  }
+  main header h1 a:hover {
+    color: inherit;
+  }
+  main header h1 a span,
+  main header h1 a img {
+    display: inline-block;
+    font-size: 1.1em;
+  }
+  main header h1 a span {
+    margin-right: 0.3em;
+    margin-left: -0.1rem;
+  }
+  main header h1 a img {
+    width: 1.2em;
+    height: 1.2em;
+    margin-right: 0.2em;
+    margin-left: -0.3rem;
+    vertical-align: sub;
+  }
+  main header h1 a img.custom-icon {
+    border-radius: var(--radius);
+  }
+
+  main header div.description {
+    padding: 0.3rem 0 0.6rem;
+    font-size: 0.95rem;
+  }
+
   div.cover img {
     display: block;
     width: 100%;
@@ -187,7 +254,7 @@ if (database.Icon && database.Icon.Type === 'file') {
     object-fit: cover;
   }
   div.content {
-    padding: 20px 40px;
+    padding: 20px;
   }
   main footer {
     margin: 30px 0 10px;
@@ -197,16 +264,19 @@ if (database.Icon && database.Icon.Type === 'file') {
   .main-content-wrapper {
     display: flex;
     width: 100%;
-    max-width: 1280px;
   }
   .content-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 20px 0;
+    position: sticky;
+    top: 0;
+    background-color: var(--bg, white);
+    z-index: 10;
   }
   .content-header h1 {
-    margin: 0;
+    margin: 0.5rem;
   }
   .content-header .description {
     display: none; /* Hide description in header to simplify layout */
@@ -230,9 +300,12 @@ if (database.Icon && database.Icon.Type === 'file') {
     height: 0.25rem;
     background: var(--fg);
     border-radius: 10px;
-    transition: all 0.3s linear;
+    transition: all 0.3s ease-in-out;
     position: relative;
     transform-origin: 1px;
+  }
+  .sidebar-is-open .hamburger-menu {
+    display: none;
   }
 
   /* Sidebar Container */
@@ -269,7 +342,7 @@ if (database.Icon && database.Icon.Type === 'file') {
     position: absolute;
     top: 0;
     right: 0;
-    width: 300px;
+    width: 500px;
     height: 100%;
     padding: 20px;
     background-color: #f4f4f4;
@@ -287,7 +360,7 @@ if (database.Icon && database.Icon.Type === 'file') {
       padding: 0 18px;
     }
     aside {
-      width: 80%; /* Make sidebar wider on mobile */
+      width: 80%; 
     }
   }
 </style>
