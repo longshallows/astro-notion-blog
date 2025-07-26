@@ -1,16 +1,20 @@
 ---
 import { Post } from '../lib/interfaces.ts'
-import { getPostLink } from '../lib/blog-helpers.ts'
+import { getPostLink, getPersonLink } from '../lib/blog-helpers.ts'
+
 
 export interface Props {
   post: Post
+  basePath: 'posts' | 'persons'
 }
 
-const { post } = Astro.props
+const { post, basePath } = Astro.props
+
+const link = basePath === 'posts' ? getPostLink(post.Slug) : getPersonLink(post.Slug);
 ---
 
 <div class="read-more-link">
-  <a href={getPostLink(post.Slug)}>→Read more</a>
+  <a href={link}>→Read more</a>
 </div>
 
 <style>

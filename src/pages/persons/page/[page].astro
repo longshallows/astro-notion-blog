@@ -1,12 +1,11 @@
 ---
+import { DATABASE_ID, AUTHORS_DB_ID } from '../../../server-constants.ts'
 import {
   getPostsByPage,
   getRankedPosts,
   getAllTags,
   getNumberOfPages,
-  getPostsByPage,
 } from '../../../lib/notion/client.ts'
-import { DATABASE_ID,AUTHORS_DB_ID } from '../../../server-constants.ts'
 import Layout from '../../../layouts/Layout.astro'
 import NoContents from '../../../components/NoContents.astro'
 import PostDate from '../../../components/PostDate.astro'
@@ -20,8 +19,8 @@ import BlogPostsLink from '../../../components/BlogPostsLink.astro'
 import BlogTagsLink from '../../../components/BlogTagsLink.astro'
 import styles from '../../../styles/blog.module.css'
 
-export async function getStaticPaths() {const numberOfPages = await getNumberOfPages(DATABASE_ID)
-
+export async function getStaticPaths() {
+  const numberOfPages = await getNumberOfPages(AUTHORS_DB_ID)
   let params = []
   for (let i = 2; i <= numberOfPages; i++) {
     params.push({ params: { page: i.toString() } })
@@ -31,32 +30,28 @@ export async function getStaticPaths() {const numberOfPages = await getNumberOfP
 
 const { page } = Astro.params
 
-const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPostsByPage(DATABASE_ID, parseInt(page, 10)),
+const [persons, rankedPosts, tags, numberOfPages] = await Promise.all([
+  getPostsByPage(AUTHORS_DB_ID, parseInt(page, 10)),
   getRankedPosts(DATABASE_ID),
   getAllTags(DATABASE_ID),
-  getNumberOfPages(DATABASE_ID),
+  getNumberOfPages(AUTHORS_DB_ID),
 ])
 ---
 
-<Layout title={`Posts ${page}/${numberOfPages}`} path={`/posts/page/${page}`}>
+<Layout title={`Persons ${page}/${numberOfPages}`} path={`/persons/page/${page}`}>
   <div slot="main" class={styles.main}>
-    <header>
-      <div class="page-container">{page}/{numberOfPages}</div>
-    </header>
-
     {
-      posts.length === 0 ? (
-        <NoContents contents={posts} />
+      persons.length === 0 ? (
+        <NoContents contents={persons} />
       ) : (
-        posts.map((post) => (
-          <div class={styles.post} key={post.Slug}>
-            <PostDate post={post} />
-            <PostTags post={post} />
-            <PostTitle post={post} basePath="posts"/>
-            <PostFeaturedImage post={post} />
-            <PostExcerpt post={post} />
-            <ReadMoreLink post={post} />
+        persons.map((person) => (
+          <div class={styles.post}>
+            <PostDate post={person} />
+            <PostTags post={person} />
+            <PostTitle post={person} basePath="persons" />
+            <PostFeaturedImage post={person} />
+            <PostExcerpt post={person} />
+            <ReadMoreLink post={person} basePath="persons" />
           </div>
         ))
       )
@@ -64,8 +59,10 @@ const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
 
     <footer>
       <Pagination
+        basePath="/persons"
         currentPage={parseInt(page, 10)}
         numberOfPages={numberOfPages}
+        tag=""
       />
     </footer>
   </div>

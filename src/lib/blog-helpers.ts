@@ -130,7 +130,7 @@ export const getNavLink = (nav: string) => {
 }
 
 export const getPostLink = (slug: string) => {
-  return pathJoin(BASE_PATH, `/posts/${slug}`)
+  return pathJoin(BASE_PATH, `/articles/${slug}`)
 }
 
 export const getPersonLink = (slug: string) => {
@@ -138,18 +138,21 @@ export const getPersonLink = (slug: string) => {
 }
 
 export const getTagLink = (tag: string) => {
-  return pathJoin(BASE_PATH, `/posts/tag/${encodeURIComponent(tag)}`)
+  return pathJoin(BASE_PATH, `/articles/tag/${encodeURIComponent(tag)}`)
 }
-export const getPageLink = (basePath: string, page: number, tag: string) => {
-  if (page === 1) {
-    return tag ? getTagLink(tag) : pathJoin(BASE_PATH, basePath)
+
+export const getPageLink = (basePath: string, page: number, tag?: string) => {
+  let sectionRoot = pathJoin(BASE_PATH, basePath)
+
+  if (tag) {
+    sectionRoot = pathJoin(sectionRoot, `/tag/${encodeURIComponent(tag)}`)
   }
-  return tag
-    ? pathJoin(
-        BASE_PATH,
-        `${basePath}/tag/${encodeURIComponent(tag)}/page/${page.toString()}`
-      )
-    : pathJoin(BASE_PATH, `${basePath}/page/${page.toString()}`)
+
+  if (page === 1) {
+    return sectionRoot
+  }
+
+  return pathJoin(sectionRoot, `/page/${page}`)
 }
 
 export const getDateStr = (date: string) => {

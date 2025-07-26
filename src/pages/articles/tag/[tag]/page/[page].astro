@@ -54,8 +54,8 @@ const currentTag = posts[0].Tags.find((t) => t.name === tag)
 ---
 
 <Layout
-  title={`Posts in ${tag} ${page}/${numberOfPages}`}
-  path={`/posts/tag/${tag}/page/${page}`}
+  title={`Articles in ${tag} ${page}/${numberOfPages}`}
+  path={`/articles/tag/${tag}/page/${page}`}
 >
   <div slot="main" class={styles.main}>
     <header>
@@ -76,7 +76,7 @@ const currentTag = posts[0].Tags.find((t) => t.name === tag)
             <PostTitle post={post} basePath="posts"/>
             <PostFeaturedImage post={post} />
             <PostExcerpt post={post} />
-            <ReadMoreLink post={post} />
+            <ReadMoreLink post={post} basePath="posts" />
           </div>
         ))
       )
@@ -87,6 +87,7 @@ const currentTag = posts[0].Tags.find((t) => t.name === tag)
         tag={tag}
         currentPage={parseInt(page, 10)}
         numberOfPages={numberOfPages}
+        basePath="/articles"
       />
     </footer>
   </div>

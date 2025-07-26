@@ -21,34 +21,32 @@ import BlogTagsLink from '../components/BlogTagsLink.astro'
 import styles from '../styles/blog.module.css'
 
 const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPosts(DATABASE_ID, NUMBER_OF_POSTS_PER_PAGE), // 第1引数にDATABASE_IDを追加
-  getRankedPosts(DATABASE_ID),                     // 引数にDATABASE_IDを追加
-  getAllTags(DATABASE_ID),                         // 引数にDATABASE_IDを追加
-  getNumberOfPages(DATABASE_ID),                   // 引数にDATABASE_IDを追加
+  getPosts(DATABASE_ID, NUMBER_OF_POSTS_PER_PAGE),
+  getRankedPosts(DATABASE_ID),
+  getAllTags(DATABASE_ID),
+  getNumberOfPages(DATABASE_ID),
 ])
+const latestPosts = await getPosts(DATABASE_ID, 5);
 ---
 
 <Layout>
   <div slot="main" class={styles.main}>
-    {
-      posts.length === 0 ? (
-        <NoContents contents={posts} />
-      ) : (
-        posts.map((post) => (
-          <div class={styles.post} key={post.Slug}>
-            <PostDate post={post} />
-            <PostTags post={post} />
-            <PostTitle post={post} basePath="posts" />
-            <PostFeaturedImage post={post} />
-            <PostExcerpt post={post} />
-            <ReadMoreLink post={post} />
-          </div>
-        ))
-      )
-    }
+    <h1>サイトへようこそ！</h1>
+    <p>このサイトについての説明文をここに記述します。</p>
+    
+    <hr />
+
+    <a href="/articles">→ すべての記事を見る</a><br>
+    <a href="/persons">→ 著者一覧を見る</a>
+
+    <hr />
+
+    <h2>新着記事</h2>
+    <BlogPostsLink posts={latestPosts} />
+  </div>
 
     <footer>
-      <Pagination basePath="/posts" currentPage={1} numberOfPages={numberOfPages} />
+      <Pagination basePath="/articles" currentPage={1} numberOfPages={numberOfPages} />
     </footer>
   </div>
 

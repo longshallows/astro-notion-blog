@@ -1,52 +1,54 @@
 ---
-import { DATABASE_ID, AUTHORS_DB_ID, NUMBER_OF_POSTS_PER_PAGE } from '../../server-constants.ts'
+import { DATABASE_ID, AUTHORS_DB_ID } from '../../server-constants.ts'
+import { NUMBER_OF_POSTS_PER_PAGE } from '../../server-constants.ts'
 import {
-  getPostsByPage,
+  getPosts,
   getRankedPosts,
   getAllTags,
-  getPosts,
   getNumberOfPages,
 } from '../../lib/notion/client.ts'
 import Layout from '../../layouts/Layout.astro'
 import NoContents from '../../components/NoContents.astro'
 import PostDate from '../../components/PostDate.astro'
 import PostTags from '../../components/PostTags.astro'
+import PostTitle from '../../components/PostTitle.astro'
 import PostFeaturedImage from '../../components/PostFeaturedImage.astro'
 import PostExcerpt from '../../components/PostExcerpt.astro'
-import PostTitle from '../../components/PostTitle.astro'
+import ReadMoreLink from '../../components/ReadMoreLink.astro'
 import Pagination from '../../components/Pagination.astro'
 import BlogPostsLink from '../../components/BlogPostsLink.astro'
 import BlogTagsLink from '../../components/BlogTagsLink.astro'
-import ReadMoreLink from '../../components/ReadMoreLink.astro'
 import styles from '../../styles/blog.module.css'
 
-const [persons, rankedPosts, tags, numberOfPages] = await Promise.all([
-  getPosts(AUTHORS_DB_ID, NUMBER_OF_POSTS_PER_PAGE),
+const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
+  getPosts(DATABASE_ID, NUMBER_OF_POSTS_PER_PAGE),
   getRankedPosts(DATABASE_ID),
   getAllTags(DATABASE_ID),
-  getNumberOfPages(AUTHORS_DB_ID),
+  getNumberOfPages(DATABASE_ID),
 ])
 ---
+
 <Layout>
-  <div slot="main">
+  <div slot="main" class={styles.main}>
     {
-      persons.length === 0 ? (
-        <NoContents contents={persons} />
+      posts.length === 0 ? (
+        <NoContents contents={posts} />
       ) : (
-        persons.map((person) => (
-          <div class={styles.post} key={person.Slug}>
-            <PostDate post={person} />
-            <PostTags post={person} />
-            <PostTitle post={person} basePath="persons" />
-            <PostFeaturedImage post={person} />
-            <PostExcerpt post={person} />
-            <ReadMoreLink post={person} basePath="persons" />
+        posts.map((post) => (
+          <div class={styles.post} key={post.Slug}>
+            <PostDate post={post} />
+            <PostTags post={post} />
+            <PostTitle post={post} basePath="posts" />
+            <PostFeaturedImage post={post} />
+            <PostExcerpt post={post} />
+            <ReadMoreLink post={post} basePath="posts" />
           </div>
         ))
       )
     }
+
     <footer>
-      <Pagination basePath="/persons" currentPage={1} numberOfPages={numberOfPages} />
+      <Pagination basePath="/articles" currentPage={1} numberOfPages={numberOfPages} />
     </footer>
   </div>
 

@@ -1,15 +1,19 @@
 ---
-import * as interfaces from '../../lib/interfaces.ts'
 import {
+  getRankedPosts,
+  getAllTags,
+  getNumberOfPages,
   getAllPersons,
   getAllBlogPosts,
   getAllBlocksByBlockId,
 } from '../../lib/notion/client.ts'
+import { DATABASE_ID, AUTHORS_DB_ID } from '../../server-constants.ts'
 import { getPersonLink } from '../../lib/blog-helpers.ts'
 import Layout from '../../layouts/Layout.astro'
 import PostTitle from '../../components/PostTitle.astro'
 import PostBody from '../../components/PostBody.astro'
 import BlogPostsLink from '../../components/BlogPostsLink.astro'
+import BlogTagsLink from '../../components/BlogTagsLink.astro'
 import styles from '../../styles/blog.module.css'
 
 export async function getStaticPaths() {
@@ -22,6 +26,11 @@ export async function getStaticPaths() {
 const { slug } = Astro.params
 
 const allPersons = await getAllPersons()
+const [rankedPosts, tags, numberOfPages] = await Promise.all([
+  getRankedPosts(DATABASE_ID),
+  getAllTags(DATABASE_ID),
+  getNumberOfPages(AUTHORS_DB_ID),
+])
 const person = allPersons.find((p) => p.Slug === slug)
 
 if (!person) {
@@ -58,8 +67,9 @@ const relatedPosts = allBlogPosts.filter((post) =>
       )}
     </div>
   </div>
-
-  <div slot="aside" class="aside">
+  <div slot="aside" class={styles.aside}>
+    <BlogPostsLink heading="Recommended" posts={rankedPosts} />
+    <BlogTagsLink heading="Categories" tags={tags} />
     <a href="/persons">→ 著者一覧へ戻る</a>
   </div>
 </Layout>

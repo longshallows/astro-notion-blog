@@ -38,7 +38,7 @@ const [posts, rankedPosts, tags, numberOfPages] = await Promise.all([
 const currentTag = posts[0].Tags.find((t) => t.name === tag)
 ---
 
-<Layout title={`Posts in ${tag}`} path={`/posts/tag/${tag}`}>
+<Layout title={`Articles in ${tag}`} path={`/articles/tag/${tag}`}>
   <div slot="main" class={styles.main}>
     <header>
       <div class="tag-container">
@@ -57,14 +57,14 @@ const currentTag = posts[0].Tags.find((t) => t.name === tag)
             <PostTitle post={post} basePath="posts"/>
             <PostFeaturedImage post={post} />
             <PostExcerpt post={post} />
-            <ReadMoreLink post={post} />
+            <ReadMoreLink post={post} basePath="posts" />
           </div>
         ))
       )
     }
 
     <footer>
-      <Pagination tag={tag} currentPage={1} numberOfPages={numberOfPages} />
+      <Pagination tag={tag} currentPage={1} numberOfPages={numberOfPages} basePath="/articles" />
     </footer>
   </div>
 
